@@ -58,7 +58,7 @@ use crate::{IntoUri, ext::UriExt};
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Proxy {
     extra: Extra,
     scheme: ProxyScheme,
@@ -66,7 +66,7 @@ pub struct Proxy {
 }
 
 /// A configuration for filtering out requests that shouldn't be proxied
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct NoProxy {
     inner: String,
 }
@@ -86,8 +86,8 @@ pub(crate) struct Matcher {
     inner: Box<matcher::Matcher>,
 }
 
-#[derive(Clone, Debug)]
-enum ProxyScheme {
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ProxyScheme {
     All(Uri),
     Http(Uri),
     Https(Uri),
@@ -289,6 +289,10 @@ impl Proxy {
         self
     }
 
+    pub fn scheme(&self) -> &ProxyScheme {
+        &self.scheme
+    }
+
     pub(crate) fn into_matcher(self) -> Matcher {
         let Proxy {
             scheme,
@@ -381,6 +385,19 @@ impl Matcher {
     #[inline]
     pub(crate) fn intercept(&self, dst: &Uri) -> Option<Intercepted> {
         self.inner.intercept(dst)
+    }
+}
+
+// ===== impl ProxyScheme =====
+
+impl ProxyScheme {
+    #[allow(dead_code)]
+    pub fn maybe_uri(&self) -> Option<&Uri> {
+        match self {
+            ProxyScheme::All(uri) | ProxyScheme::Http(uri) | ProxyScheme::Https(uri) => Some(uri),
+            #[cfg(unix)]
+            ProxyScheme::Unix(_) => None,
+        }
     }
 }
 
