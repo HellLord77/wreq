@@ -201,6 +201,7 @@ struct Config {
     pool_max_idle_per_host: usize,
     pool_max_size: Option<NonZeroU32>,
     tcp_nodelay: bool,
+    tcp_zero_linger: bool,
     tcp_reuse_address: bool,
     tcp_keepalive: Option<Duration>,
     tcp_keepalive_interval: Option<Duration>,
@@ -288,6 +289,7 @@ impl Client {
                 tcp_user_timeout: Some(Duration::from_secs(30)),
                 tcp_connect_options: TcpConnectOptions::default(),
                 tcp_nodelay: true,
+                tcp_zero_linger: false,
                 tcp_reuse_address: false,
                 tcp_send_buffer_size: None,
                 tcp_recv_buffer_size: None,
@@ -543,6 +545,7 @@ impl ClientBuilder {
                     http.set_connect_options(config.tcp_connect_options);
                     http.set_connect_timeout(config.connect_timeout);
                     http.set_nodelay(config.tcp_nodelay);
+                    http.set_zero_linger(config.tcp_zero_linger);
                     http.set_send_buffer_size(config.tcp_send_buffer_size);
                     http.set_recv_buffer_size(config.tcp_recv_buffer_size);
                     http.set_happy_eyeballs_timeout(config.tcp_happy_eyeballs_timeout);
@@ -1113,6 +1116,12 @@ impl ClientBuilder {
     #[inline]
     pub fn tcp_nodelay(mut self, enabled: bool) -> ClientBuilder {
         self.config.tcp_nodelay = enabled;
+        self
+    }
+
+    #[inline]
+    pub fn tcp_zero_linger(mut self, enabled: bool) -> ClientBuilder {
+        self.config.tcp_zero_linger = enabled;
         self
     }
 

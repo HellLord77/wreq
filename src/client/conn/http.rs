@@ -203,6 +203,7 @@ struct Config {
     tcp_keepalive_config: TcpKeepaliveConfig,
     tcp_connect_options: TcpConnectOptions,
     nodelay: bool,
+    zero_linger: bool,
     reuse_address: bool,
     send_buffer_size: Option<usize>,
     recv_buffer_size: Option<usize>,
@@ -344,6 +345,7 @@ impl<R> HttpConnector<R> {
                 tcp_keepalive_config: TcpKeepaliveConfig::default(),
                 tcp_connect_options: TcpConnectOptions::default(),
                 nodelay: false,
+                zero_linger: false,
                 reuse_address: false,
                 send_buffer_size: None,
                 recv_buffer_size: None,
@@ -393,6 +395,11 @@ impl<R> HttpConnector<R> {
     #[inline]
     pub fn set_nodelay(&mut self, nodelay: bool) {
         self.config_mut().nodelay = nodelay;
+    }
+
+    #[inline]
+    pub fn set_zero_linger(&mut self, zero_linger: bool) {
+        self.config_mut().zero_linger = zero_linger;
     }
 
     /// Sets the value of the SO_SNDBUF option on the socket.
@@ -608,6 +615,12 @@ where
 
         if let Err(_e) = sock.set_nodelay(config.nodelay) {
             warn!("tcp set_nodelay error: {_e}");
+        }
+
+        if config.zero_linger
+            && let Err(_e) = sock.set_zero_linger()
+        {
+            warn!("tcp set_zero_linger error: {_e}");
         }
 
         Ok(sock)
